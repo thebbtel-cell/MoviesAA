@@ -1,0 +1,41 @@
+name: G-Command Center Build
+
+on:
+  push:
+    branches: [ main ] # Se dispara cada vez que subas algo a la rama main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0' # O la versión que estés usando
+          channel: 'stable'
+
+      - name: Get Dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        # Aquí pasamos las keys de Supabase como argumentos para que no vivan en el código
+        run: |
+          flutter build apk --release \
+          --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+          --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+          --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: g-command-center-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
